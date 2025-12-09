@@ -1,603 +1,519 @@
+
+Gemini
+Ask about your files
+Summarize this folder
+Analyze each file in this folder
+What can Gemini do with folders in Google Drive
+Gemini in Workspace can make mistakes, so double-check responses. Learn more
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Alokasi Ruang Kuliah - Kelompok 6</title>
+    <title>Sistem Optimasi Alokasi Ruang Kuliah - Kelompok 6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { font-family: 'Inter', sans-serif; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .room-card { transition: all 0.2s; }
-        .room-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        /* Custom Scrollbar for room grid */
+        .room-grid::-webkit-scrollbar { width: 6px; }
+        .room-grid::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+<body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
 
-    <!-- Header / Navbar -->
-    <nav class="bg-blue-900 text-white shadow-lg sticky top-0 z-50">
+    <nav class="bg-indigo-900 text-white shadow-lg sticky top-0 z-50">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-3">
-                <i class="fas fa-university text-2xl text-yellow-400"></i>
+                <div class="bg-yellow-500 text-indigo-900 p-2 rounded-lg font-bold">ITB</div>
                 <div>
-                    <h1 class="text-xl font-bold leading-tight">Smart Classroom Allocation</h1>
-                    <p class="text-xs text-blue-200">ITB Jatinangor - Kelompok 6</p>
+                    <h1 class="text-lg font-bold leading-tight">Smart Classroom System</h1>
+                    <p class="text-xs text-indigo-300">Kelompok 6 - Jatinangor</p>
                 </div>
             </div>
-            <!-- Desktop Menu -->
-            <div class="hidden md:flex space-x-6">
-                <button onclick="switchTab('dashboard')" class="nav-btn hover:text-yellow-400 transition font-medium text-yellow-400" id="btn-dashboard">
-                    <i class="fas fa-chart-pie mr-1"></i> Dashboard
+            <div class="hidden md:flex space-x-1 bg-indigo-800 p-1 rounded-lg">
+                <button onclick="switchTab('allocation')" id="btn-allocation" class="nav-btn px-4 py-2 rounded-md text-sm font-medium transition bg-indigo-600 text-white shadow">
+                    <i class="fas fa-magic mr-2"></i>Booking (Smart Allocation)
                 </button>
-                <button onclick="switchTab('allocation')" class="nav-btn hover:text-yellow-400 transition font-medium" id="btn-allocation">
-                    <i class="fas fa-magic mr-1"></i> Auto Alokasi
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn px-4 py-2 rounded-md text-sm font-medium transition text-indigo-200 hover:text-white">
+                    <i class="fas fa-chart-pie mr-2"></i>Cek Status
                 </button>
-                <button onclick="switchTab('reschedule')" class="nav-btn hover:text-yellow-400 transition font-medium" id="btn-reschedule">
-                    <i class="fas fa-calendar-alt mr-1"></i> Reschedule
+                <button onclick="switchTab('reschedule')" id="btn-reschedule" class="nav-btn px-4 py-2 rounded-md text-sm font-medium transition text-indigo-200 hover:text-white">
+                    <i class="fas fa-exchange-alt mr-2"></i>Pindah Jadwal
                 </button>
             </div>
-            <!-- Mobile Menu Button -->
-            <button class="md:hidden text-2xl focus:outline-none" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden md:hidden bg-blue-800 pb-4">
-            <a href="#" onclick="switchTab('dashboard')" class="block px-4 py-2 hover:bg-blue-700">Dashboard</a>
-            <a href="#" onclick="switchTab('allocation')" class="block px-4 py-2 hover:bg-blue-700">Auto Alokasi</a>
-            <a href="#" onclick="switchTab('reschedule')" class="block px-4 py-2 hover:bg-blue-700">Reschedule</a>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="flex-grow container mx-auto px-4 py-6">
+    <main class="flex-grow container mx-auto px-4 py-6 max-w-5xl">
 
-        <!-- Notification Toast -->
-        <div id="toast" class="fixed bottom-5 right-5 hidden bg-green-600 text-white px-6 py-3 rounded-lg shadow-xl z-50 flex items-center gap-3 transform transition-all duration-300 translate-y-20">
-            <i class="fas fa-check-circle text-xl"></i>
-            <span id="toast-msg">Operasi Berhasil</span>
+        <div id="toast" class="fixed top-20 right-5 hidden z-50 transform transition-all duration-300 translate-x-full">
+            <div id="toast-content" class="flex items-center w-full max-w-xs p-4 space-x-4 text-gray-500 bg-white divide-x divide-gray-200 rounded-lg shadow space-x">
+                </div>
         </div>
 
-        <!-- VIEW: DASHBOARD (Real-time Availability) -->
-        <section id="view-dashboard" class="fade-in block">
-            <div class="bg-white rounded-xl shadow-md p-6 mb-6 border-l-4 border-blue-600">
-                <h2 class="text-2xl font-bold mb-2 text-gray-800">Cek Ketersediaan Gedung</h2>
-                <p class="text-gray-600 mb-4">Lihat status ruangan secara real-time berdasarkan waktu.</p>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Pilih Gedung</label>
-                        <select id="dash-gedung-select" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" onchange="renderDashboard()">
-                            <!-- Populated by JS -->
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Waktu / Sesi</label>
-                        <select id="dash-time-select" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" onchange="renderDashboard()">
-                            <option value="Senin 07.00">Senin 07.00</option>
-                            <option value="Senin 08.00">Senin 08.00</option>
-                            <option value="Senin 09.00">Senin 09.00</option>
-                            <option value="Senin 10.00">Senin 10.00</option>
-                            <option value="Senin 13.00">Senin 13.00</option>
-                        </select>
-                    </div>
-                    <div class="flex items-end">
-                        <button onclick="renderDashboard()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition">
-                            <i class="fas fa-sync-alt mr-2"></i> Refresh
-                        </button>
-                    </div>
+        <section id="view-allocation" class="fade-in block">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="bg-indigo-600 p-6 text-white">
+                    <h2 class="text-2xl font-bold"><i class="fas fa-search-location mr-2"></i>Cari & Booking Ruangan</h2>
+                    <p class="opacity-80">Sistem akan mencarikan ruangan paling efisien (Best Fit) sesuai kebutuhan.</p>
                 </div>
-            </div>
-
-            <!-- Visualization Area -->
-            <div id="building-visual" class="space-y-4">
-                <!-- Content generated by JS -->
-            </div>
-        </section>
-
-        <!-- VIEW: AUTO ALLOCATION -->
-        <section id="view-allocation" class="hidden fade-in">
-            <div class="max-w-2xl mx-auto">
-                <div class="bg-white rounded-xl shadow-md p-8 border-t-4 border-green-500">
-                    <h2 class="text-2xl font-bold mb-6 text-center text-gray-800"><i class="fas fa-robot mr-2 text-green-600"></i>Rekomendasi Cerdas</h2>
-                    
-                    <div class="space-y-4">
+                
+                <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-5">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nama Mata Kuliah</label>
-                            <input type="text" id="alloc-matkul" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" placeholder="Contoh: IF1234 - Algoritma">
+                            <input type="text" id="alloc-matkul" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Contoh: Matematika Diskrit">
                         </div>
                         
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Mahasiswa</label>
+                            <input type="number" id="alloc-mhs" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="0">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Mahasiswa</label>
-                                <input type="number" id="alloc-mhs" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" placeholder="0">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Hari</label>
+                                <select id="alloc-hari" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none day-selector">
+                                    </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Waktu</label>
-                                <select id="alloc-waktu" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
-                                    <option value="Senin 07.00">Senin 07.00</option>
-                                    <option value="Senin 08.00">Senin 08.00</option>
-                                    <option value="Senin 09.00">Senin 09.00</option>
-                                    <option value="Senin 10.00">Senin 10.00</option>
-                                    <option value="Senin 13.00">Senin 13.00</option>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Jam</label>
+                                <select id="alloc-jam" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none time-selector">
+                                    </select>
                             </div>
                         </div>
 
-                        <button onclick="findRecommendation()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition transform active:scale-95 shadow-lg">
-                            Cari Ruangan Terbaik
+                        <button onclick="runSmartAllocation()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition transform active:scale-95 shadow-md">
+                            Cari Rekomendasi
                         </button>
                     </div>
-                </div>
 
-                <!-- Result Card -->
-                <div id="alloc-result" class="mt-6 hidden">
-                    <!-- JS fills this -->
+                    <div id="alloc-result" class="bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center p-6 relative">
+                        <div class="text-center text-gray-400">
+                            <i class="fas fa-robot text-4xl mb-3"></i>
+                            <p>Hasil rekomendasi akan muncul di sini.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- VIEW: RESCHEDULE -->
-        <section id="view-reschedule" class="hidden fade-in">
-            <div class="max-w-4xl mx-auto">
-                <div class="bg-white rounded-xl shadow-md p-6 mb-6 border-l-4 border-yellow-500">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-800">Reschedule Jadwal</h2>
+        <section id="view-dashboard" class="hidden fade-in">
+            <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <h2 class="text-2xl font-bold text-gray-800">Status Gedung Real-time</h2>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div class="col-span-1">
-                            <label class="block text-xs font-bold text-gray-500 uppercase">Kode Ruangan Saat Ini</label>
-                            <!-- UPDATED: Changed Input to Select -->
-                            <select id="resch-kode" class="w-full p-2 border border-gray-300 rounded mt-1 bg-white focus:ring-2 focus:ring-yellow-500 outline-none">
-                                <option value="">-- Pilih Ruangan --</option>
-                                <!-- Populated by JS -->
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <select id="dash-gedung" class="p-2 border rounded bg-gray-50 w-full md:w-48" onchange="renderDashboard()">
                             </select>
-                        </div>
-                        <div class="col-span-1">
-                            <label class="block text-xs font-bold text-gray-500 uppercase">Waktu Saat Ini</label>
-                            <select id="resch-waktu-lama" class="w-full p-2 border border-gray-300 rounded mt-1">
-                                <option value="Senin 07.00">Senin 07.00</option>
-                                <option value="Senin 08.00">Senin 08.00</option>
-                                <option value="Senin 09.00">Senin 09.00</option>
-                                <option value="Senin 10.00">Senin 10.00</option>
-                                <option value="Senin 13.00">Senin 13.00</option>
-                            </select>
-                        </div>
-                        <div class="col-span-1 flex items-end">
-                            <button onclick="checkCurrentSchedule()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 rounded">
-                                <i class="fas fa-search"></i> Cek Jadwal
-                            </button>
-                        </div>
+                        <select id="dash-hari" class="p-2 border rounded bg-gray-50 day-selector" onchange="renderDashboard()"></select>
+                        <select id="dash-jam" class="p-2 border rounded bg-gray-50 time-selector" onchange="renderDashboard()"></select>
                     </div>
+                </div>
 
-                    <!-- Step 2: Confirmation & Target Time -->
-                    <div id="resch-step-2" class="hidden bg-gray-50 p-4 rounded border border-gray-200">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 class="font-bold text-lg text-blue-900" id="resch-matkul-name">-</h3>
-                                <p class="text-sm text-gray-600">Kapasitas Ruang Asal: <span id="resch-cap-asal" class="font-mono font-bold">0</span></p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
+                                <th class="p-3 border-b">Kode Ruang</th>
+                                <th class="p-3 border-b text-center">Lantai</th>
+                                <th class="p-3 border-b text-center">Kapasitas</th>
+                                <th class="p-3 border-b">Fasilitas</th>
+                                <th class="p-3 border-b text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dash-table-body" class="text-sm">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-reschedule" class="hidden fade-in">
+            <div class="max-w-3xl mx-auto space-y-6">
+                
+                <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
+                    <h2 class="text-xl font-bold mb-4">Langkah 1: Cari Jadwal Lama</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="md:col-span-1">
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Kode Ruang</label>
+                            <select id="resch-kode" class="w-full p-2 border rounded mt-1"></select>
+                        </div>
+                        <div class="md:col-span-2 flex gap-2">
+                            <div class="w-1/2">
+                                <label class="block text-xs font-bold text-gray-500 uppercase">Hari Lama</label>
+                                <select id="resch-hari-lama" class="w-full p-2 border rounded mt-1 day-selector"></select>
                             </div>
-                            <span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded">Jadwal Ditemukan</span>
-                        </div>
-                        
-                        <hr class="border-gray-300 my-3">
-                        
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Waktu Baru:</label>
-                        <div class="flex gap-2">
-                            <select id="resch-waktu-baru" class="flex-grow p-2 border border-gray-300 rounded">
-                                <option value="Senin 07.00">Senin 07.00</option>
-                                <option value="Senin 08.00">Senin 08.00</option>
-                                <option value="Senin 09.00">Senin 09.00</option>
-                                <option value="Senin 10.00">Senin 10.00</option>
-                                <option value="Senin 13.00">Senin 13.00</option>
-                            </select>
-                            <button onclick="findRescheduleOptions()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-6 rounded shadow">
-                                Cari Slot
-                            </button>
+                            <div class="w-1/2">
+                                <label class="block text-xs font-bold text-gray-500 uppercase">Jam Lama</label>
+                                <select id="resch-jam-lama" class="w-full p-2 border rounded mt-1 time-selector"></select>
+                            </div>
                         </div>
                     </div>
+                    <button onclick="checkJadwalReschedule()" class="mt-4 bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 w-full">
+                        Cari Jadwal
+                    </button>
                 </div>
 
-                <!-- Step 3: Result List -->
-                <div id="resch-options" class="grid grid-cols-1 gap-3">
-                    <!-- Options generated here -->
+                <div id="resch-step2" class="hidden bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-blue-900" id="resch-found-matkul">Matkul</h2>
+                            <p class="text-sm text-gray-600">Lokasi saat ini: <span id="resch-found-loc" class="font-mono font-bold">-</span></p>
+                            <p class="text-sm text-gray-600">Kapasitas: <span id="resch-found-cap" class="font-bold">-</span></p>
+                        </div>
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Ditemukan</span>
+                    </div>
+
+                    <hr class="my-4">
+                    
+                    <h3 class="font-bold mb-2">Pilih Waktu Baru:</h3>
+                    <div class="flex gap-3 mb-4">
+                        <select id="resch-hari-baru" class="w-1/2 p-2 border rounded day-selector"></select>
+                        <select id="resch-jam-baru" class="w-1/2 p-2 border rounded time-selector"></select>
+                    </div>
+                    
+                    <button onclick="findRescheduleCandidates()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full font-bold">
+                        Cari Ruangan Pengganti
+                    </button>
                 </div>
+
+                <div id="resch-candidates" class="space-y-3"></div>
             </div>
         </section>
 
     </main>
 
-    <footer class="bg-white border-t border-gray-200 mt-auto py-6">
-        <div class="container mx-auto px-4 text-center">
-            <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Anggota Kelompok 6</h3>
-            <div class="flex flex-wrap justify-center gap-4 text-xs text-gray-600">
-                <span>19625042 - Vinandiar F.</span>
-                <span>19625086 - Dylan Frederico K.</span>
-                <span>19625126 - Jonathan Lewie</span>
-                <span>19625182 - Ernest Clarence G.</span>
-                <span>19625190 - M. Fakhriyan Rizki</span>
+    <footer class="bg-white border-t py-6 mt-8">
+        <div class="container mx-auto text-center text-sm text-gray-500">
+            <p class="font-bold">Kelompok 6</p>
+            <div class="mt-2 space-x-2 text-xs">
+                <span>Vinandiar Firdausiyah (19625042)</span>
+                <span>Dylan Frederico Ketaren (19625086)</span>
+                <span>Jonathan Lewie (19625126)</span>
+                <span>Ernest Clarence Gunawan (19625182)</span>
+                <span>Fakhriyan Fakhriyan Rizki M (19625190)</span>
             </div>
         </div>
     </footer>
 
-    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // ================= DATA STRUCTURES =================
-        class Ruangan {
-            constructor(kode, kapasitas, fasilitas) {
-                this.kode = kode;
-                this.kapasitas = kapasitas;
-                this.fasilitas = fasilitas;
-                this.jadwal = {}; // { "Waktu": "Nama Matkul" }
-            }
+        // ================= CONFIGURATION =================
+        const DAYS = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
+        const TIMES = ["07.00", "08.00", "09.00", "10.00", "11.00", "12.00", "13.00", "14.00", "15.00", "16.00", "17.00"];
+        
+        // Data Store (Mirip list data_seluruh_ruangan di Python)
+        let dataRuangan = [];
 
-            isAvailable(waktu) {
-                return !this.jadwal[waktu];
-            }
+        // ================= INITIALIZATION =================
+        function initData() {
+            // Bersihkan data lama
+            dataRuangan = [];
 
-            book(waktu, matkul) {
-                this.jadwal[waktu] = matkul;
-            }
-
-            cancel(waktu) {
-                if(this.jadwal[waktu]) {
-                    delete this.jadwal[waktu];
-                    return true;
-                }
-                return false;
-            }
-        }
-
-        class Lantai {
-            constructor(nomor, namaGedung, kapasitas) {
-                this.nomor = nomor;
-                this.slots = [];
-                
-                // Logic Fasilitas Homogen
-                let fac = "Ruang Diskusi (Meja Bundar)";
-                if(kapasitas >= 100) fac = "Theater Room (Proyektor Besar)";
-                else if(kapasitas >= 50) fac = "Kelas Reguler (Smartboard)";
-
-                this.fasilitas = fac;
-                this.kapasitas = kapasitas;
-
-                // 3 Slots
-                ['A', 'B', 'C'].forEach(label => {
-                    this.slots.push(new Ruangan(`${namaGedung}-L${nomor}-${label}`, kapasitas, fac));
-                });
-            }
-        }
-
-        class Gedung {
-            constructor(nama, jumLantai) {
-                this.nama = nama;
-                this.lantaiList = [];
-                for(let i=1; i<=jumLantai; i++) {
-                    // Random capacity for simulation
-                    const caps = [30, 40, 50, 60, 80, 100, 120, 150];
-                    const cap = caps[Math.floor(Math.random() * caps.length)];
-                    this.lantaiList.push(new Lantai(i, nama, cap));
-                }
-            }
-        }
-
-        // ================= APP STATE =================
-        const appData = {
-            gedung: []
-        };
-
-        // Initialize Data
-        function initApp() {
-            const configs = [
+            // Definisi Gedung sesuai Python Script
+            const listGedung = [
                 ["GKU 1", 3], ["GKU 2", 3], ["GKU 3", 3],
                 ["Rektorat", 2],
-                ["Akademik A", 2], ["Akademik B", 2], ["Akademik C", 2], ["Akademik D", 2], ["Akademik E", 2]
+                ["Akademik A", 2], ["Akademik B", 2], ["Akademik C", 2],
+                ["Akademik D", 2], ["Akademik E", 2]
             ];
 
-            configs.forEach(([nama, floors]) => {
-                appData.gedung.push(new Gedung(nama, floors));
-            });
+            listGedung.forEach(([namaGedung, jumLantai]) => {
+                for (let i = 1; i <= jumLantai; i++) {
+                    // Logic Kapasitas: Ganjil = 50, Genap = 100
+                    let kapasitas, fasilitas;
+                    if (i % 2 === 1) {
+                        kapasitas = 50;
+                        fasilitas = "Kelas Reguler (Papan Tulis Smart)";
+                    } else {
+                        kapasitas = 100;
+                        fasilitas = "Theater Room (Proyektor Besar)";
+                    }
 
-            // Populate Dropdown Dashboard
-            const sel = document.getElementById('dash-gedung-select');
-            appData.gedung.forEach((g, idx) => {
-                const opt = document.createElement('option');
-                opt.value = idx;
-                opt.text = g.nama;
-                sel.add(opt);
-            });
-
-            // Populate Reschedule Dropdown (NEW)
-            const reschSel = document.getElementById('resch-kode');
-            appData.gedung.forEach(g => {
-                g.lantaiList.forEach(l => {
-                    l.slots.forEach(r => {
-                        const opt = document.createElement('option');
-                        opt.value = r.kode;
-                        opt.text = r.kode; // e.g. GKU 1-L1-A
-                        reschSel.add(opt);
+                    // Loop Ruangan A - E
+                    ['A', 'B', 'C', 'D', 'E'].forEach(huruf => {
+                        const kode = `${namaGedung}-L${i}-${huruf}`;
+                        dataRuangan.push({
+                            gedung: namaGedung,
+                            lantai: i,
+                            kode: kode,
+                            kapasitas: kapasitas,
+                            fasilitas: fasilitas,
+                            jadwal: {} // Dictionary: Key "Hari Jam" => Value "Matkul"
+                        });
                     });
-                });
+                }
             });
 
+            populateDropdowns();
             renderDashboard();
         }
 
-        // ================= UI FUNCTIONS =================
-        function switchTab(tabName) {
-            // Hide all
-            ['dashboard', 'allocation', 'reschedule'].forEach(t => {
-                document.getElementById('view-' + t).classList.add('hidden');
-                document.getElementById('btn-' + t).classList.remove('text-yellow-400');
-                document.getElementById('btn-' + t).classList.add('text-blue-100');
+        // Helper untuk mengisi dropdown
+        function populateDropdowns() {
+            // Fill Day Selectors
+            document.querySelectorAll('.day-selector').forEach(sel => {
+                sel.innerHTML = DAYS.map(d => `<option value="${d}">${d}</option>`).join('');
+            });
+            // Fill Time Selectors
+            document.querySelectorAll('.time-selector').forEach(sel => {
+                sel.innerHTML = TIMES.map(t => `<option value="${t}">${t}</option>`).join('');
+            });
+            // Fill Building Selector (Dashboard)
+            const uniqueGedung = [...new Set(dataRuangan.map(r => r.gedung))];
+            const dashGedung = document.getElementById('dash-gedung');
+            dashGedung.innerHTML = uniqueGedung.map(g => `<option value="${g}">${g}</option>`).join('');
+
+            // Fill Room Selector (Reschedule)
+            const reschKode = document.getElementById('resch-kode');
+            reschKode.innerHTML = dataRuangan.map(r => `<option value="${r.kode}">${r.kode}</option>`).join('');
+        }
+
+        // ================= NAVIGATION =================
+        function switchTab(tabId) {
+            // Hide all sections
+            ['allocation', 'dashboard', 'reschedule'].forEach(id => {
+                document.getElementById(`view-${id}`).classList.add('hidden');
+                const btn = document.getElementById(`btn-${id}`);
+                // Reset Styles
+                btn.classList.remove('bg-indigo-600', 'text-white', 'shadow');
+                btn.classList.add('text-indigo-200');
             });
 
             // Show selected
-            document.getElementById('view-' + tabName).classList.remove('hidden');
-            document.getElementById('btn-' + tabName).classList.add('text-yellow-400');
-            document.getElementById('btn-' + tabName).classList.remove('text-blue-100');
-
-            if(tabName === 'dashboard') renderDashboard();
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow');
+            activeBtn.classList.remove('text-indigo-200');
         }
 
-        function showToast(msg, type='success') {
+        function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
-            const msgSpan = document.getElementById('toast-msg');
+            const content = document.getElementById('toast-content');
             
-            toast.className = `fixed bottom-5 right-5 flex items-center gap-3 px-6 py-3 rounded-lg shadow-xl z-50 transform transition-all duration-300 translate-y-0 ${type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`;
+            let icon = type === 'success' ? '<i class="fas fa-check-circle text-green-500 text-xl"></i>' : '<i class="fas fa-exclamation-circle text-red-500 text-xl"></i>';
             
-            msgSpan.innerText = msg;
-            toast.classList.remove('hidden', 'translate-y-20');
+            content.innerHTML = `${icon}<div class="text-sm font-normal text-gray-800">${message}</div>`;
+            
+            toast.classList.remove('hidden', 'translate-x-full');
+            toast.classList.add('translate-x-0');
             
             setTimeout(() => {
-                toast.classList.add('translate-y-20');
+                toast.classList.add('translate-x-full');
                 setTimeout(() => toast.classList.add('hidden'), 300);
             }, 3000);
         }
 
-        // ================= FEATURE 1: DASHBOARD =================
-        function renderDashboard() {
-            const gdgIdx = document.getElementById('dash-gedung-select').value;
-            const time = document.getElementById('dash-time-select').value;
-            const container = document.getElementById('building-visual');
-            
-            if(gdgIdx === "") return;
-
-            const gedung = appData.gedung[gdgIdx];
-            container.innerHTML = '';
-
-            gedung.lantaiList.forEach(lantai => {
-                // Floor Card
-                const card = document.createElement('div');
-                card.className = 'bg-white rounded-lg shadow p-4 border border-gray-200';
-                
-                let slotsHtml = '';
-                lantai.slots.forEach(ruang => {
-                    const isFree = ruang.isAvailable(time);
-                    const statusClass = isFree ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200';
-                    const icon = isFree ? 'fa-door-open' : 'fa-door-closed';
-                    const statusText = isFree ? 'KOSONG' : `TERISI<br><span class="text-xs opacity-75">${ruang.jadwal[time]}</span>`;
-                    
-                    slotsHtml += `
-                        <div class="flex-1 p-3 rounded border ${statusClass} text-center transition hover:shadow-md">
-                            <div class="text-lg mb-1"><i class="fas ${icon}"></i></div>
-                            <div class="font-bold text-sm mb-1">${ruang.kode.split('-').pop()}</div>
-                            <div class="text-xs leading-tight font-semibold">${statusText}</div>
-                        </div>
-                    `;
-                });
-
-                card.innerHTML = `
-                    <div class="flex flex-col md:flex-row gap-4 items-center">
-                        <div class="md:w-1/4 text-center md:text-left">
-                            <div class="text-2xl font-bold text-gray-700">Lantai ${lantai.nomor}</div>
-                            <div class="text-sm text-gray-500"><i class="fas fa-chair mr-1"></i> Kapasitas: ${lantai.kapasitas}</div>
-                            <div class="text-xs text-gray-400 mt-1">${lantai.fasilitas}</div>
-                        </div>
-                        <div class="md:w-3/4 w-full flex gap-2">
-                            ${slotsHtml}
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        // ================= FEATURE 2: AUTO ALLOCATION =================
-        function findRecommendation() {
+        // ================= FITUR 1: SMART ALLOCATION =================
+        function runSmartAllocation() {
             const matkul = document.getElementById('alloc-matkul').value;
             const mhs = parseInt(document.getElementById('alloc-mhs').value);
-            const time = document.getElementById('alloc-waktu').value;
-            const resContainer = document.getElementById('alloc-result');
+            const hari = document.getElementById('alloc-hari').value;
+            const jam = document.getElementById('alloc-jam').value;
+            const waktu = `${hari} ${jam}`; // Format Key: "Senin 08.00"
 
-            if(!matkul || !mhs) {
-                showToast("Mohon lengkapi data!", "error");
+            const resultDiv = document.getElementById('alloc-result');
+
+            if (!matkul || isNaN(mhs) || mhs <= 0) {
+                showToast("Mohon isi data dengan benar!", "error");
                 return;
             }
 
+            // Algoritma Best Fit (Python Logic)
             let candidates = [];
-
-            appData.gedung.forEach(g => {
-                g.lantaiList.forEach(l => {
-                    if(l.kapasitas >= mhs) {
-                        l.slots.forEach(r => {
-                            if(r.isAvailable(time)) {
-                                candidates.push({
-                                    ruang: r,
-                                    gedung: g.nama,
-                                    waste: r.kapasitas - mhs
-                                });
-                            }
+            
+            dataRuangan.forEach(ruang => {
+                if (ruang.kapasitas >= mhs) {
+                    // Cek ketersediaan
+                    if (!ruang.jadwal[waktu]) {
+                        candidates.push({
+                            ...ruang,
+                            waste: ruang.kapasitas - mhs // Hitung sisa kursi
                         });
                     }
-                });
+                }
             });
 
-            if(candidates.length === 0) {
-                resContainer.innerHTML = `
-                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded shadow">
-                        <div class="flex">
-                            <div class="flex-shrink-0"><i class="fas fa-exclamation-circle text-red-500"></i></div>
-                            <div class="ml-3">
-                                <p class="text-sm text-red-700 font-bold">Tidak ada ruangan tersedia</p>
-                                <p class="text-xs text-red-600">Cobalah kurangi jumlah mahasiswa atau ganti waktu.</p>
-                            </div>
-                        </div>
+            if (candidates.length === 0) {
+                resultDiv.innerHTML = `
+                    <div class="text-center text-red-500">
+                        <i class="fas fa-times-circle text-4xl mb-2"></i>
+                        <h3 class="font-bold">Tidak ada ruangan tersedia!</h3>
+                        <p class="text-sm">Untuk ${mhs} orang pada ${waktu}.</p>
                     </div>
                 `;
-                resContainer.classList.remove('hidden');
                 return;
             }
 
-            // Sort by waste (Best Fit)
+            // Sort berdasarkan waste terkecil (Ascending)
             candidates.sort((a, b) => a.waste - b.waste);
-            const best = candidates[0];
+            const best = candidates[0]; // Ambil yang paling efisien
 
-            resContainer.innerHTML = `
-                <div class="bg-green-50 border border-green-200 rounded-xl p-6 shadow-lg text-center relative overflow-hidden">
-                    <div class="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">BEST MATCH</div>
-                    
-                    <h3 class="text-gray-500 uppercase tracking-widest text-xs font-bold mb-1">Rekomendasi Sistem</h3>
-                    <div class="text-3xl font-bold text-green-700 mb-2">${best.ruang.kode}</div>
-                    <div class="text-sm text-gray-600 mb-4">${best.gedung} &bull; Kapasitas ${best.ruang.kapasitas} <span class="text-green-600">(Sisa ${best.waste})</span></div>
-                    
-                    <div class="bg-white p-3 rounded border border-gray-100 inline-block mb-4 text-xs text-gray-500">
-                        <i class="fas fa-tools mr-1"></i> ${best.ruang.fasilitas}
+            resultDiv.innerHTML = `
+                <div class="w-full bg-white p-4 rounded shadow-sm border border-green-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded font-bold">REKOMENDASI TERBAIK</span>
+                        <span class="text-xs text-gray-500">Efisiensi: Sisa ${best.waste} Kursi</span>
                     </div>
-
-                    <button onclick="confirmBooking('${best.ruang.kode}', '${time}', '${matkul}')" class="block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded shadow transition">
+                    <h3 class="text-3xl font-bold text-indigo-700">${best.kode}</h3>
+                    <p class="text-gray-600 font-medium">${best.gedung} - Lantai ${best.lantai}</p>
+                    <div class="my-3 text-sm text-gray-500">
+                        <p><i class="fas fa-chair mr-2"></i>Kapasitas: ${best.kapasitas}</p>
+                        <p><i class="fas fa-tv mr-2"></i>${best.fasilitas}</p>
+                    </div>
+                    <button onclick="confirmBooking('${best.kode}', '${waktu}', '${matkul}')" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded transition">
                         Ambil Ruangan Ini
                     </button>
                 </div>
             `;
-            resContainer.classList.remove('hidden');
+            resultDiv.classList.remove('bg-gray-50', 'border-dashed');
         }
 
-        function confirmBooking(kode, time, matkul) {
-            // Find room object
-            for(let g of appData.gedung) {
-                for(let l of g.lantaiList) {
-                    for(let r of l.slots) {
-                        if(r.kode === kode) {
-                            r.book(time, matkul);
-                            showToast(`Berhasil booking ${kode} untuk ${matkul}`);
-                            document.getElementById('alloc-result').classList.add('hidden');
-                            document.getElementById('alloc-matkul').value = '';
-                            document.getElementById('alloc-mhs').value = '';
-                            return;
-                        }
-                    }
-                }
+        function confirmBooking(kode, waktu, matkul) {
+            const ruang = dataRuangan.find(r => r.kode === kode);
+            if (ruang) {
+                ruang.jadwal[waktu] = matkul;
+                showToast(`Berhasil booking ${kode}!`);
+                // Reset UI
+                document.getElementById('alloc-result').innerHTML = `
+                    <div class="text-center text-gray-400">
+                        <i class="fas fa-robot text-4xl mb-3"></i>
+                        <p>Silakan cari lagi untuk booking baru.</p>
+                    </div>
+                `;
+                document.getElementById('alloc-matkul').value = "";
+                document.getElementById('alloc-mhs').value = "";
             }
         }
 
-        // ================= FEATURE 3: RESCHEDULE =================
-        let currentRescheduleData = null; // { ruangObj, oldTime, matkulName }
-
-        function checkCurrentSchedule() {
-            const kode = document.getElementById('resch-kode').value.trim();
-            const time = document.getElementById('resch-waktu-lama').value;
+        // ================= FITUR 2: DASHBOARD =================
+        function renderDashboard() {
+            const gedungNama = document.getElementById('dash-gedung').value;
+            const hari = document.getElementById('dash-hari').value;
+            const jam = document.getElementById('dash-jam').value;
+            const waktu = `${hari} ${jam}`;
             
-            if(!kode) {
-                showToast("Pilih ruangan terlebih dahulu!", "error");
+            const tbody = document.getElementById('dash-table-body');
+            tbody.innerHTML = '';
+
+            // Filter ruangan berdasarkan gedung
+            const filtered = dataRuangan.filter(r => r.gedung === gedungNama);
+
+            if (filtered.length === 0) return;
+
+            filtered.forEach(r => {
+                const isTerisi = r.jadwal[waktu] ? true : false;
+                const statusHtml = isTerisi 
+                    ? `<span class="bg-red-100 text-red-800 text-xs font-bold px-2 py-1 rounded">TERISI</span><br><span class="text-xs text-gray-500">${r.jadwal[waktu]}</span>`
+                    : `<span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded">KOSONG</span>`;
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50";
+                tr.innerHTML = `
+                    <td class="p-3 font-medium">${r.kode}</td>
+                    <td class="p-3 text-center">${r.lantai}</td>
+                    <td class="p-3 text-center">${r.kapasitas}</td>
+                    <td class="p-3 text-xs text-gray-500">${r.fasilitas}</td>
+                    <td class="p-3 text-center">${statusHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ================= FITUR 3: RESCHEDULE =================
+        let rescheduleTarget = null; // Menyimpan data jadwal yang mau dipindah
+
+        function checkJadwalReschedule() {
+            const kode = document.getElementById('resch-kode').value;
+            const hari = document.getElementById('resch-hari-lama').value;
+            const jam = document.getElementById('resch-jam-lama').value;
+            const waktu = `${hari} ${jam}`;
+
+            const ruang = dataRuangan.find(r => r.kode === kode);
+
+            if (ruang && ruang.jadwal[waktu]) {
+                // Jadwal Ditemukan
+                rescheduleTarget = {
+                    ruangObj: ruang,
+                    waktuLama: waktu,
+                    matkul: ruang.jadwal[waktu],
+                    kapasitasAsal: ruang.kapasitas
+                };
+
+                // Update UI Step 2
+                document.getElementById('resch-step2').classList.remove('hidden');
+                document.getElementById('resch-found-matkul').innerText = rescheduleTarget.matkul;
+                document.getElementById('resch-found-loc').innerText = `${ruang.kode} (${waktu})`;
+                document.getElementById('resch-found-cap').innerText = ruang.kapasitas + " Kursi";
+                
+                showToast("Jadwal ditemukan!", "success");
+                
+                // Bersihkan hasil pencarian sebelumnya
+                document.getElementById('resch-candidates').innerHTML = '';
+            } else {
+                showToast("Jadwal tidak ditemukan / Ruangan Kosong.", "error");
+                document.getElementById('resch-step2').classList.add('hidden');
+            }
+        }
+
+        function findRescheduleCandidates() {
+            if (!rescheduleTarget) return;
+
+            const hariBaru = document.getElementById('resch-hari-baru').value;
+            const jamBaru = document.getElementById('resch-jam-baru').value;
+            const waktuBaru = `${hariBaru} ${jamBaru}`;
+            
+            const container = document.getElementById('resch-candidates');
+            container.innerHTML = '';
+
+            // Logic Python: Cari ruangan dengan kapasitas >= kapasitas asal
+            // Sort dari yang terkecil (agar efisien)
+            let candidates = dataRuangan.filter(r => 
+                r.kapasitas >= rescheduleTarget.kapasitasAsal && !r.jadwal[waktuBaru]
+            ).sort((a, b) => a.kapasitas - b.kapasitas);
+
+            if (candidates.length === 0) {
+                container.innerHTML = '<div class="p-4 bg-red-100 text-red-700 rounded text-center">Tidak ada ruangan pengganti yang tersedia di waktu ini.</div>';
                 return;
             }
 
-            let found = null;
-            
-            for(let g of appData.gedung) {
-                for(let l of g.lantaiList) {
-                    for(let r of l.slots) {
-                        if(r.kode === kode) {
-                            found = r;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if(found && !found.isAvailable(time)) {
-                currentRescheduleData = {
-                    ruangObj: found,
-                    oldTime: time,
-                    matkulName: found.jadwal[time]
-                };
-                
-                document.getElementById('resch-step-2').classList.remove('hidden');
-                document.getElementById('resch-matkul-name').innerText = currentRescheduleData.matkulName;
-                document.getElementById('resch-cap-asal').innerText = currentRescheduleData.ruangObj.kapasitas;
-                showToast("Jadwal ditemukan!", "success");
-            } else {
-                showToast("Jadwal tidak ditemukan atau ruangan kosong.", "error");
-                document.getElementById('resch-step-2').classList.add('hidden');
-                document.getElementById('resch-options').innerHTML = '';
-            }
-        }
-
-        function findRescheduleOptions() {
-            const newTime = document.getElementById('resch-waktu-baru').value;
-            const minCap = currentRescheduleData.ruangObj.kapasitas;
-            const container = document.getElementById('resch-options');
-            
-            container.innerHTML = '';
-            let count = 0;
-
-            appData.gedung.forEach(g => {
-                g.lantaiList.forEach(l => {
-                    if(l.kapasitas >= minCap) {
-                        l.slots.forEach(r => {
-                            if(r.isAvailable(newTime)) {
-                                count++;
-                                const div = document.createElement('div');
-                                div.className = 'bg-white p-3 rounded border border-gray-200 flex justify-between items-center hover:bg-gray-50';
-                                div.innerHTML = `
-                                    <div>
-                                        <div class="font-bold text-gray-800">${r.kode}</div>
-                                        <div class="text-xs text-gray-500">${g.nama} &bull; Kap: ${r.kapasitas}</div>
-                                    </div>
-                                    <button onclick="executeReschedule('${r.kode}', '${newTime}')" class="bg-blue-600 text-white text-xs px-3 py-2 rounded font-bold hover:bg-blue-700">Pindah Sini</button>
-                                `;
-                                container.appendChild(div);
-                            }
-                        });
-                    }
-                });
+            candidates.forEach(r => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-3 rounded border border-gray-200 flex justify-between items-center hover:bg-indigo-50 transition";
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold text-gray-800">${r.kode}</div>
+                        <div class="text-xs text-gray-500">${r.fasilitas} (Kap: ${r.kapasitas})</div>
+                    </div>
+                    <button onclick="executeReschedule('${r.kode}', '${waktuBaru}')" class="bg-indigo-600 text-white text-xs px-3 py-2 rounded font-bold hover:bg-indigo-700">
+                        Pindah ke Sini
+                    </button>
+                `;
+                container.appendChild(div);
             });
-
-            if(count === 0) {
-                container.innerHTML = '<div class="text-center text-gray-500 italic p-4">Tidak ada ruangan pengganti yang tersedia.</div>';
-            }
         }
 
-        function executeReschedule(targetKode, newTime) {
-            // Find target room
-            let targetRoom = null;
-            for(let g of appData.gedung) {
-                for(let l of g.lantaiList) {
-                    for(let r of l.slots) {
-                        if(r.kode === targetKode) targetRoom = r;
-                    }
-                }
-            }
+        function executeReschedule(kodeBaru, waktuBaru) {
+            // Hapus jadwal lama
+            delete rescheduleTarget.ruangObj.jadwal[rescheduleTarget.waktuLama];
 
-            if(targetRoom) {
-                // Cancel old
-                currentRescheduleData.ruangObj.cancel(currentRescheduleData.oldTime);
-                // Book new
-                targetRoom.book(newTime, currentRescheduleData.matkulName);
-                
-                showToast("Jadwal Berhasil Dipindahkan!");
-                
-                // Reset UI
-                document.getElementById('resch-kode').value = '';
-                document.getElementById('resch-step-2').classList.add('hidden');
-                document.getElementById('resch-options').innerHTML = '';
-            }
+            // Pasang jadwal baru
+            const ruangBaru = dataRuangan.find(r => r.kode === kodeBaru);
+            ruangBaru.jadwal[waktuBaru] = rescheduleTarget.matkul;
+
+            showToast("Jadwal Berhasil Dipindahkan!");
+
+            // Reset UI Reschedule
+            document.getElementById('resch-step2').classList.add('hidden');
+            document.getElementById('resch-candidates').innerHTML = '';
+            rescheduleTarget = null;
         }
 
-        // Init on Load
-        window.onload = initApp;
+        // Jalankan saat load
+        window.onload = initData;
 
     </script>
 </body>
